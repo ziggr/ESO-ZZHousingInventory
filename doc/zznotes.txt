@@ -1,0 +1,42 @@
+
+GetNextPlacedHousingFurnitureId(id64:nilable lastFurnitureId)
+Returns: id64:nilable nextFurnitureId
+
+GetPlacedHousingFurnitureInfo(id64 furnitureId)
+Returns: string itemName, textureName icon, number furnitureDataId
+
+GetPlacedHousingFurnitureQuality(id64 furnitureId)
+Returns: number ItemQuality quality
+
+GetPlacedFurnitureLink(id64 placedFurnitureId, number LinkStyle linkStyle)
+Returns: string itemLink, string collectibleLink
+
+--
+furnitureId:
+GetFurnitureIdFromCollectibleId(number collectibleId)
+Returns: id64 furnitureId
+
+GetCollectibleIdFromFurnitureId(id64 furnitureId)
+Returns: number collectibleId
+
+GetItemUniqueIdFromFurnitureId(id64 furnitureId)
+Returns: id64 itemUniqueId
+
+GetFurnitureIdFromItemUniqueId(id64 itemUniqueId)
+Returns: id64 furnitureId
+
+-- furnitureDataId
+GetItemFurnitureDataId(number Bag bagId, number slotIndex)
+Returns: number furnitureDataId
+
+GetItemLinkFurnitureDataId(string itemLink)
+Returns: number furnitureDataId
+
+GetCollectibleFurnitureDataId(number collectibleId)
+Returns: number furnitureDataId
+
+GetFurnitureDataInfo(number furnitureDataId)
+Returns: number:nilable categoryId, number:nilable subcategoryId, number FurnitureThemeType furnitureTheme
+
+GetFurnitureDataCategoryInfo(number furnitureDataId)
+Returns: number:nilable categoryId, number:nilable subcategoryId

@@ -1,4 +1,12 @@
 
+--
+GetCurrentZoneHouseId()
+Returns: number houseId
+
+GetPlayerLocationName()
+Returns: string mapName
+
+--
 GetNextPlacedHousingFurnitureId(id64:nilable lastFurnitureId)
 Returns: id64:nilable nextFurnitureId
 

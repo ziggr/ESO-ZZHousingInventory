@@ -239,11 +239,25 @@ local function from_FurC_Crafting(item_link, recipe_array)
     return kCurrType_Gold, total_mat_cost, notes
 end
 
-function ZZHousingInventory.FurCPrice(link)
+local function from_FurC_Rollis(item_link, recipe_array)
+    local item_id       = FurC.GetItemId(item_link)
+    local seller_list   = { FurC.Rollis, FurC.Faustina }
+    local seller_names  = { "Rollis", "Faustina" }
+    for i, seller in ipairs(seller_list) do
+        local version_data = seller[recipe_array.version]
+        if version_data and version_data[item_id] then
+            local ct = version_data[item_id]
+            return kCurrType_WritVouchers, ct, seller_names[i]
+        end
+    end
+    return nil, nil, nil
+end
+
+function ZZHousingInventory.FurCPrice(item_link)
     if not FurC then return nil end
 
-    local item_id       = FurC.GetItemId(link)
-    local recipe_array  = FurC.Find(link)
+    local item_id       = FurC.GetItemId(item_link)
+    local recipe_array  = FurC.Find(item_link)
     if not recipe_array then return nil end
     local origin        = recipe_array.origin
     if not origin then return nil end
@@ -253,9 +267,12 @@ function ZZHousingInventory.FurCPrice(link)
     local currency_ct    = nil
     local currency_notes = nil
 
-    if origin == FURC_CRAFTING then
-        currency_type, currency_ct, currency_notes
-            = from_FurC_Crafting(item_link, recipe_array)
+    local func_table = { [FURC_CRAFTING] = from_FurC_Crafting
+                       , [FURC_ROLLIS  ] = from_FurC_Rollis
+                       }
+    local func = func_table[origin]
+    if func then  currency_type, currency_ct, currency_notes
+            = func(item_link, recipe_array)
     end
 
     local o = { origin    = origin

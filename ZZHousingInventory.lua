@@ -34,7 +34,8 @@ function Item:FromFurnitureId(furniture_id)
     o.furniture_subcategory_id  = r[2]
     o.furniture_theme_type      = r[3]
 
-    o.mm                = ZZHousingInventory.MMPrice(o.link)
+    o.mm                 = ZZHousingInventory.MMPrice(o.link)
+    o.furc               = ZZHousingInventory.FurCPrice(o.link)
 
     setmetatable(o, self)
     self.__index = self
@@ -43,10 +44,11 @@ end
 
 function Item.ToStorage(self)
     local key = Id64ToString(self.furniture_data_id)
-    local store = { name  = self.item_name
-                  , ct    = 0
-                  , link  = self.link
-                  , value = { }
+    local store = { name       = self.item_name
+                  , ct         = 0
+                  , link       = self.link
+                  , value_mm   = self.mm
+                  , value_furc = self.furc
                   }
     return key, store
 end
@@ -203,10 +205,26 @@ end
 function ZZHousingInventory.MMPrice(link)
     if not MasterMerchant then return nil end
     if not link then return nil end
-    mm = MasterMerchant:itemStats(link, false)
+    local mm = MasterMerchant:itemStats(link, false)
     if not mm then return nil end
-    --d("MM for link: "..tostring(link).." "..tostring(mm.avgPrice))
     return mm.avgPrice
+end
+
+function ZZHousingInventory.FurCPrice(link)
+    if not FurC then return nil end
+
+    local item_id       = FurC.GetItemId(link)
+    local recipe_array  = FurC.Find(link)
+    if not recipe_array then return nil end
+    local origin        = recipe_array.origin
+    if not origin then return nil end
+
+    local desc          = FurC.GetItemDescription(item_id, recipe_array)
+
+    local o = { origin  = origin
+              , desc    = desc
+              }
+    return o
 end
 
 

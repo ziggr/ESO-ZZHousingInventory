@@ -253,6 +253,15 @@ local function from_FurC_Rollis(item_link, recipe_array)
     return nil, nil, nil
 end
 
+local function from_FurC_Luxury(item_link, recipe_array)
+    local version_data = FurC.LuxuryFurnisher[recipe_array.version]
+    if not version_data then return nil, nil, nil end
+    local item_id   = FurC.GetItemId(item_link)
+    local item_data = version_data[item_id]
+    if not item_data then return nil, nil, nil end
+    return kCurrType_Gold, item_data.itemPrice, "luxury vendor"
+end
+
 function ZZHousingInventory.FurCPrice(item_link)
     if not FurC then return nil end
 
@@ -269,6 +278,7 @@ function ZZHousingInventory.FurCPrice(item_link)
 
     local func_table = { [FURC_CRAFTING] = from_FurC_Crafting
                        , [FURC_ROLLIS  ] = from_FurC_Rollis
+                       , [FURC_LUXURY  ] = from_FurC_Luxury
                        }
     local func = func_table[origin]
     if func then  currency_type, currency_ct, currency_notes

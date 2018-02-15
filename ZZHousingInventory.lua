@@ -15,20 +15,19 @@ ZZHousingInventory.default = {
 
 local Item = {}
 function Item:FromFurnitureId(furniture_id)
-    local o = { furniture_id = Id64ToString(furniture_id) }
+    local o = { furniture_id = furniture_id }
 
     local r = { GetPlacedHousingFurnitureInfo(furniture_id) }
     o.item_name             = r[1]
     o.texture_name          = r[2]
-    o.furniture_data_id     = Id64ToString(r[3])
+    o.furniture_data_id     = r[3]
     local furniture_data_id = r[3]
 
     o.quality           = GetPlacedHousingFurnitureQuality(furniture_id)
     o.link              = GetPlacedFurnitureLink(
                                 furniture_id, LINK_STYLE_DEFAULT)
     o.collectible_id    = GetCollectibleIdFromFurnitureId(furniture_id)
-    o.unique_id         = Id64ToString(
-                            GetItemUniqueIdFromFurnitureId(furniture_id))
+    o.unique_id         = GetItemUniqueIdFromFurnitureId(furniture_id)
 
     r = { GetFurnitureDataInfo(furniture_data_id) }
     o.furniture_category_id     = r[1]
@@ -40,6 +39,16 @@ function Item:FromFurnitureId(furniture_id)
     setmetatable(o, self)
     self.__index = self
     return o
+end
+
+function Item.ToStorage(self)
+    local key = Id64ToString(self.furniture_data_id)
+    local store = { name  = self.item_name
+                  , ct    = 0
+                  , link  = self.link
+                  , value = { }
+                  }
+    return key, store
 end
 
 function max(a, b)
@@ -173,20 +182,22 @@ function ZZHousingInventory:ScanNow()
         return
     end
 
-    local location_name = GetPlayerLocationName()
+    local location_name  = GetPlayerLocationName()
+    local save_furniture = {}
 
-    local furniture_list = {}
     local furniture_id = GetNextPlacedHousingFurnitureId(nil)
     local loop_limit   = 1000 -- avoid infinite loops in cause GNPHFI() surprises us
     while furniture_id and 0 < loop_limit do
         local item = Item:FromFurnitureId(furniture_id)
-        table.insert(furniture_list, item)
-d(item.item_name)
+        local key, store = item:ToStorage()
+        save_furniture[key]    = save_furniture[key] or store
+        save_furniture[key].ct = save_furniture[key].ct + 1
+
         furniture_id = GetNextPlacedHousingFurnitureId(furniture_id)
         loop_limit = loop_limit - 1
     end
 
-    self.savedVariables.house[location_name] = furniture_list
+    self.savedVariables.house[location_name] = save_furniture
 end
 
 function ZZHousingInventory.MMPrice(link)

@@ -1,7 +1,6 @@
 .PHONY: send get csv
 
 put:
-	#git commit -am auto
 	cp -f ./ZZHousingInventory.lua /Volumes/Elder\ Scrolls\ Online/live/AddOns/ZZHousingInventory/
 
 get:

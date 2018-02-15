@@ -278,6 +278,30 @@ local function from_FurC_AchievementVendor(item_link, recipe_array)
     return nil, nil, nil
 end
 
+local function from_FurC_Crown(item_link, recipe_array)
+    local item_id      = FurC.GetItemId(item_link)
+    local version_data = FurC.MiscItemSources[recipe_array.version]
+    if not version_data then return nil, nil, nil end
+    local origin_data  = version_data[recipe_array.origin]
+    if not origin_data then return nil, nil, nil end
+    local entry = origin_data[item_id]
+    if type(entry) == "number" then
+        return kCurrType_Crowns, entry, nil
+    end
+    if type(entry) == "string" then
+        local n = string.match(entry, "%d+")
+        if n and tonumber(n) then
+            return kCurrType_Crowns, n, nil
+        end
+    end
+    if type(entry) == "table" then
+        if entry.itemPrice then
+            return kCurrType_Crowns, entry.itemPrice, nil
+        end
+    end
+    return nil, nil, nil
+end
+
 function ZZHousingInventory.FurCPrice(item_link)
     if not FurC then return nil end
 
@@ -292,10 +316,12 @@ function ZZHousingInventory.FurCPrice(item_link)
     local currency_ct    = nil
     local currency_notes = nil
 
-    local func_table = { [FURC_CRAFTING] = from_FurC_Crafting
-                       , [FURC_ROLLIS  ] = from_FurC_Rollis
-                       , [FURC_LUXURY  ] = from_FurC_Luxury
-                       , [FURC_VENDOR  ] = from_FurC_AchievementVendor
+    local func_table = { [FURC_CRAFTING] = from_FurC_Crafting           --  3
+                       , [FURC_ROLLIS  ] = from_FurC_Rollis             -- 12
+                       , [FURC_LUXURY  ] = from_FurC_Luxury             -- 10
+                       , [FURC_VENDOR  ] = from_FurC_AchievementVendor  --  6
+                       , [FURC_CROWN   ] = from_FurC_Crown              --  8
+                       -- , [FURC_DROP    ] = from_FurC_Drop               -- 14
                        }
     local func = func_table[origin]
     if func then  currency_type, currency_ct, currency_notes

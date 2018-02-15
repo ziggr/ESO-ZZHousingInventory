@@ -48,3 +48,117 @@ Returns: number:nilable categoryId, number:nilable subcategoryId, number Furnitu
 
 GetFurnitureDataCategoryInfo(number furnitureDataId)
 Returns: number:nilable categoryId, number:nilable subcategoryId
+
+--
+Furniture Catalogue
+
+	itemId 		= FurC.GetItemId(itemLink)
+	recipeArray = FurC.Find(itemLink)
+	sourceString = FurC.GetItemDescription(itemId, recipeArray)
+
+	sourceString is "Sold by Rohzika (Rivenspire, Shornhelm, Dead Wolf Inn, 250)"
+
+But need to dig deeper if I want to fetch that "250" as an integer gold amount
+
+function FurC.GetItemDescription(recipeKey, recipeArray, stripColor)
+	recipeArray = recipeArray or FurC.Find(recipeKey, recipeArray)
+	if not recipeArray then return "" end
+	local origin = recipeArray.origin
+	if origin == FURC_CRAFTING then
+		return FurC.GetMats(recipeKey, recipeArray, stripColor)
+	elseif origin == FURC_ROLLIS then
+		return FurC.getRollisSource(recipeKey, recipeArray, stripColor)
+	elseif origin == FURC_LUXURY then
+		return FurC.getLuxurySource(recipeKey, recipeArray, stripColor)
+	elseif origin == FURC_GUILDSTORE then
+		return FURC_STRING_TRADINGHOUSE
+	elseif origin == FURC_VENDOR then
+		return FurC.getAchievementVendorSource(recipeKey, recipeArray, stripColor)
+	elseif origin == FURC_FESTIVAL_DROP then
+		return FurC.getEventDropSource(recipeKey, recipeArray, stripColor)
+	elseif origin == FURC_PVP then
+		return FurC.getPvpSource(recipeKey, recipeArray, stripColor)
+	elseif origin == FURC_RUMOUR then
+		return FurC.getRumourSource(recipeKey, recipeArray), stripColor
+	else
+		itemSource = FurC.GetMiscItemSource(recipeKey, recipeArray, stripColor)
+	end
+	return itemSource or GetString(SI_FURC_ITEMSOURCE_EMPTY)
+end
+
+For the most part, the look seems to be
+	specific data table
+		[recipeKey] = integer cost (in gold, vouchers, whatever)
+		or
+		[recipeKey].itemPrice = integer cost
+
+FurC.LuxuryFurnisher[FURC_MORROWIND] = {
+	-- August 5+6
+	[126573] = { -- Velothi Candle, Mourning
+		itemPrice 	= 5417,
+		itemDate	= "2017-08-11",
+	},
+	...
+
+FurC.PVP[FURC_HOMESTEAD] = {
+	[FURC_ITEMSOURCE_VENDOR] = {
+		[FURC_CYRO] = {
+			[119656] = {	-- Pennant, Small
+				itemPrice 	= 200,
+				achievement = 92,	-- Volunteer
+			},
+	...
+
+Many are priceless, have just an empty table
+
+FurC.EventItems[FURC_HOMESTEAD] = {
+	["Jester Festival"] = {
+		["Jester Boxes"] = {
+			[120995] = {}, 	-- Banner, Jester's Standard
+		}
+	}
+
+FurC.Rollis[FURC_HOMESTEAD] = {
+	-- Alchemy station
+	[118328] = 35,
+...
+	-- Attunable Blacksmithing station
+	[119594] = 250,
+...
+
+FurC.Faustina[FURC_DRAGONS] = {
+	[134675] = 1500,
+}
+
+Misc items are strings (!) of varying format.
+No chance for a consistent parse. Sorry.
+
+FurC.MiscItemSources 	= {
+	[FURC_DRAGONS] = { -- Reach
+		[FURC_CROWN] 	= {
+			[130212] = FURC_CROWNSTORE_ONEK, 		-- Daedric Worship: The Ayleids
+			[134970] = FURC_CROWNSTORE_ONEHUNDRED, 	-- Mushrooms, Glowing Sprawl
+			[134947] = FURC_CROWNSTORE_ONEHUNDRED, 	-- Mushrooms, Glowing Field
+			[134948] = FURC_CROWNSTORE_FOURHUNDRED,	-- Mushrooms, Glowing Cluster
+			...
+	[FURC_CLOCKWORK] = { -- Reach
+		[FURC_DROP] = {
+			[134407] = FURC_AUTOMATON_CC,			-- Torso, Obsolete
+			[134404] = FURC_AUTOMATON_CC,			-- Factotum Knee, Obsolete
+
+local FURC_CROWNSTORESOURCE				= "Crown Store "
+local FURC_CROWNSTORE_ONEHUNDRED		= FURC_CROWNSTORESOURCE .. "(100)"
+local FURC_CROWNSTORE_FOURHUNDRED		= FURC_CROWNSTORESOURCE .. "(400)"
+local FURC_CROWNSTORE_ONEK				= FURC_CROWNSTORESOURCE .. "(1000)"
+
+local FURC_AUTOMATON 					= "from automatons"
+local FURC_AUTOMATON_CC					= FURC_AUTOMATON .. " in Clockwork City"
+
+
+
+So for FurC parsing, I think it goes
+	-- if val is number, use that
+	-- if val is table and val.itemPrice is number, use that
+	-- units (gold, crown, tv, ap) inferred from source (need source->unit table)
+	-- if val is string, try to parse out a single r'\d+' number?
+

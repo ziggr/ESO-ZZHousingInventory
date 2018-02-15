@@ -278,7 +278,7 @@ local function from_FurC_AchievementVendor(item_link, recipe_array)
     return nil, nil, nil
 end
 
-local function from_FurC_Crown(item_link, recipe_array)
+local function from_FurC_Generic(item_link, recipe_array, curr_type)
     local item_id      = FurC.GetItemId(item_link)
     local version_data = FurC.MiscItemSources[recipe_array.version]
     if not version_data then return nil, nil, nil end
@@ -286,17 +286,47 @@ local function from_FurC_Crown(item_link, recipe_array)
     if not origin_data then return nil, nil, nil end
     local entry = origin_data[item_id]
     if type(entry) == "number" then
-        return kCurrType_Crowns, entry, nil
+        return curr_type, entry, nil
     end
     if type(entry) == "string" then
         local n = string.match(entry, "%d+")
         if n and tonumber(n) then
-            return kCurrType_Crowns, n, nil
+            return curr_type, tonumber(n), nil
         end
     end
     if type(entry) == "table" then
         if entry.itemPrice then
-            return kCurrType_Crowns, entry.itemPrice, nil
+            return curr_type, entry.itemPrice, nil
+        end
+    end
+    return nil, nil, nil
+end
+
+local function from_FurC_Crown(item_link, recipe_array)
+    return from_FurC_Generic(item_link, recipe_array, kCurrType_Crowns)
+end
+
+local function from_FurC_Misc(item_link, recipe_array)
+    return from_FurC_Generic(item_link, recipe_array, kCurrType_Gold)
+end
+
+-- Rumor table and others lack any per-item details.
+-- No point in wasting time in the Misc tables.
+local function from_FurC_NoPrice(item_link, recipe_array)
+    return nil, nil, nil
+end
+
+local function from_FurC_PVP(item_link, recipe_array, curr_type)
+    local item_id      = FurC.GetItemId(item_link)
+    local version_data = FurC.PVP[recipe_array.version]
+    if not version_data then return nil, nil, nil end
+    for vendor_name, vendor_data in pairs(version_data) do
+        for location_name, location_data in pairs(vendor_data) do
+            local entry = location_data[item_id]
+            if entry then
+                local notes = vendor_name .. " in " .. location_name
+                return kCurrType_AlliancePoints, entry.itemPrice, notes
+            end
         end
     end
     return nil, nil, nil
@@ -316,14 +346,21 @@ function ZZHousingInventory.FurCPrice(item_link)
     local currency_ct    = nil
     local currency_notes = nil
 
-    local func_table = { [FURC_CRAFTING] = from_FurC_Crafting           --  3
-                       , [FURC_ROLLIS  ] = from_FurC_Rollis             -- 12
-                       , [FURC_LUXURY  ] = from_FurC_Luxury             -- 10
-                       , [FURC_VENDOR  ] = from_FurC_AchievementVendor  --  6
-                       , [FURC_CROWN   ] = from_FurC_Crown              --  8
-                       -- , [FURC_DROP    ] = from_FurC_Drop               -- 14
+    local func_table = { [FURC_CRAFTING     ] = from_FurC_Crafting           --  3
+                       , [FURC_VENDOR       ] = from_FurC_AchievementVendor  --  6
+                       , [FURC_PVP          ] = from_FurC_PVP                --  7
+                       , [FURC_CROWN        ] = from_FurC_Crown              --  8
+                       , [FURC_LUXURY       ] = from_FurC_Luxury             -- 10
+                       , [FURC_ROLLIS       ] = from_FurC_Rollis             -- 12
+                       , [FURC_DROP         ] = from_FurC_Misc               -- 14
+                       , [FURC_JUSTICE      ] = from_FurC_Misc               -- 15
+
+                       -- These tables never have per-item price data.
+                       , [FURC_RUMOUR       ] = from_FurC_NoPrice            --  9
+                       , [FURC_FESTIVAL_DROP] = from_FurC_NoPrice            -- 18
+
                        }
-    local func = func_table[origin]
+    local func = func_table[origin] or from_FurC_Misc
     if func then  currency_type, currency_ct, currency_notes
             = func(item_link, recipe_array)
     end

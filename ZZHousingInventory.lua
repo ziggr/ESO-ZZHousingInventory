@@ -210,6 +210,35 @@ function ZZHousingInventory.MMPrice(link)
     return mm.avgPrice
 end
 
+local kCurrType_Gold           = "gold"
+local kCurrType_WritVouchers   = "vouchers"
+local kCurrType_AlliancePoints = "ap"
+local kCurrType_Crowns         = "crowns"
+
+-- Dig deep into the data model of Furniture Catalogue,
+-- because there's no public API for this (Furniture Catalogue
+-- was never intended to become a public database).
+--
+local function from_FurC_Crafting(item_link, recipe_array)
+    if not recipe_array.blueprint then return nil, nil end
+    local total_mat_cost = 0
+
+    local notes = "crafting cost"
+    local blueprint_link = FurC.GetItemLink(recipe_array.blueprint)
+    local ingredient_ct = GetItemLinkRecipeNumIngredients(blueprint_link)
+    for ingr_i = 1, ingredient_ct do
+        local _, _, ct  = GetItemLinkRecipeIngredientInfo(blueprint_link, ingr_i )
+        local ingr_link  = GetItemLinkRecipeIngredientItemLink(blueprint_link, ingr_i )
+        local mm = ZZHousingInventory.MMPrice(ingr_link)
+        if mm then
+            total_mat_cost = total_mat_cost + ct * mm
+        else
+            notes = "crafting cost, partial"
+        end
+    end
+    return kCurrType_Gold, total_mat_cost, notes
+end
+
 function ZZHousingInventory.FurCPrice(link)
     if not FurC then return nil end
 
@@ -219,10 +248,21 @@ function ZZHousingInventory.FurCPrice(link)
     local origin        = recipe_array.origin
     if not origin then return nil end
 
-    local desc          = FurC.GetItemDescription(item_id, recipe_array)
+    local desc           = FurC.GetItemDescription(item_id, recipe_array)
+    local currency_type  = nil
+    local currency_ct    = nil
+    local currency_notes = nil
 
-    local o = { origin  = origin
-              , desc    = desc
+    if origin == FURC_CRAFTING then
+        currency_type, currency_ct, currency_notes
+            = from_FurC_Crafting(item_link, recipe_array)
+    end
+
+    local o = { origin    = origin
+              , desc      = desc
+              , curr_type = currency_type
+              , curr_ct   = currency_ct
+              , notes     = currency_notes
               }
     return o
 end

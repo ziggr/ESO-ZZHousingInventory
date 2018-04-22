@@ -8,6 +8,44 @@ ZZHousingInventory.default = {
     house = {}
 }
 
+
+-- cost ----------------------------------------------------------------------
+-- A cost in gold, crowns, or vouchers
+local Cost = {}
+function Cost:New(args)
+    local o = { gold     = 0
+              , crowns   = 0
+              , vouchers = 0
+              }
+    if args then
+        if args.gold then o.gold = args.gold end
+        if args.crowns then o.crowns = args.crowns end
+        if args.vouchers then o.vouchers = args.vouchers end
+    end
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function Cost:Add(b)
+    if b then
+        if b.gold     then self.gold     = (self.gold     or 0) + b.gold     end
+        if b.crowns   then self.crowns   = (self.crowns   or 0) + b.crowns   end
+        if b.vouchers then self.vouchers = (self.vouchers or 0) + b.vouchers end
+    end
+    return self
+end
+
+function Cost:ToStorage()
+    local tm = ZZHousingInventory.ToMoney
+    local s = "%sg %dc %sv"
+    return string.format( s
+                        , tm(self.gold     or 0)
+                        , tm(self.crowns   or 0)
+                        , tm(self.vouchers or 0)
+                        )
+end
+
 -- Item ----------------------------------------------------------------------
 --
 -- The occupant of a placed housing slot. This is a single furnishing item.
@@ -42,21 +80,54 @@ function Item:FromFurnitureId(furniture_id)
     return o
 end
 
+function Item:Cost()
+                        -- Lazy calc and cache.
+    if self.cost then return self.cost end
+
+                        -- Prefer recent MM to original FurC cost.
+    if self.mm then
+        self.cost = Cost:New({gold = self.mm})
+    elseif (self.furc and self.furc.currency_type) then
+-- d("self.furc:"..tostring(self.furc))
+-- d("self.furc.currency_type:"..tostring(self.furc.currency_type))
+-- d("self.furc.currency_ct:"..tostring(self.furc.currency_ct))
+-- d("self.furc:"..tostring(self.furc))
+        self.cost = Cost:New({[self.furc.currency_type] = self.furc.currency_ct})
+    end
+    return self.cost
+end
+
+function link_to_item_id(link)
+    local x = { ZO_LinkHandler_ParseLink(link) }
+    local item_id = tonumber(x[ 4])
+    return item_id
+end
+
 function Item.ToStorage(self)
-    local key = Id64ToString(self.furniture_data_id)
+    local key   = self.furniture_data_id -- link_to_item_id(self.link)
+    if not key then
+        d("no key?")
+        for k,v in pairs(self) do
+            d("k:"..tostring(k).." v:"..tostring(v))
+        end
+    end
     local store = { name       = self.item_name
                   , ct         = 0
                   , link       = self.link
-                  , value_mm   = self.mm
+                  , value_mm   = ZZHousingInventory.Round(self.mm)
                   , value_furc = self.furc
                   }
     return key, store
 end
 
-function max(a, b)
-    if not a then return b end
-    if not b then return a end
-    return math.max(a, b)
+function ZZHousingInventory.Round(f)
+    if not f then return f end
+    return math.floor(0.5+f)
+end
+
+function ZZHousingInventory.ToMoney(x)
+    if not x then return "?" end
+    return ZO_CurrencyControl_FormatCurrency(ZZHousingInventory.Round(x), false)
 end
 
 -- Init ----------------------------------------------------------------------
@@ -100,7 +171,10 @@ function ZZHousingInventory:CreateSettingsWindow()
         { type      = "button"
         , name      = "Scan Now"
         , tooltip   = "Fetch placed furniture data now."
-        , func      = function() self:ScanNow() end
+        , func      = function()
+                        self:ScanNow()
+                        self:UpdateDisplay()
+                      end
         },
 
         { type      = "description"
@@ -134,39 +208,33 @@ function ZZHousingInventory.OnPanelControlsCreated(panel)
 end
 
 function ZZHousingInventory:UpdateDisplay()
-    local total                 = 0
-    local total_gold            = 0
-    local total_item            = 0
+    local total                 = Cost:New()
     local house_list            = {}
-    for house_name, furn_list in pairs(self.savedVariables.house) do
-        local mm_total = 0
-        for i, furn in ipairs(furn_list) do
-            mm_total = mm_total + (furn.mm or 0)
-        end
+    for house_name, house in pairs(self.savedVariables.house) do
+        local c = Cost:New()
+        c:Add(house.house.cost)
+        c:Add(house.furn_cost)
+        total:Add(c)
         local house_row = { house_name   = house_name
-                          , furniture_ct = #furn_list
-                          , mm_total     = mm_total
+                          , furniture_ct = #house.furniture
+                          , cost         = c
                           }
         table.insert(house_list, house_row)
     end
 
-    -- SORT HERE by house_row.mm descending
-
-    local grand_mm_total        = 0
-    local house_name_list       = {}
-    local house_mm_list         = {}
+    local house_name_list = {}
+    local house_cost_list = {}
     for i,house_row in pairs(house_list) do
         table.insert(house_name_list, house_row.house_name)
-        table.insert(house_mm_list,   house_row.mm_total)
-        grand_mm_total     = grand_mm_total     + house_row.mm_total
+        table.insert(house_cost_list, house_row.cost:ToStorage())
     end
     table.insert(house_name_list,   "--")
     table.insert(house_name_list,  "total")
-    table.insert(house_mm_list, "--")
-    table.insert(house_mm_list, ZO_CurrencyControl_FormatCurrency(grand_mm_total, false))
+    table.insert(house_cost_list, "--")
+    table.insert(house_cost_list, total:ToStorage())
 
     local sn = table.concat(house_name_list, "\n")
-    local sa = table.concat(house_mm_list,   "\n")
+    local sa = table.concat(house_cost_list, "\n")
 
     ZZHousingInventory_desc_names.data.text   = sn
     ZZHousingInventory_desc_amounts.data.text = sa
@@ -174,6 +242,24 @@ function ZZHousingInventory:UpdateDisplay()
     ZZHousingInventory_desc_amounts.desc:SetText(sa)
 end
 
+-- HouseID -------------------------------------------------------------------
+local HOUSE = {
+                        -- all prices are for UNFURNISHED, even if we bought
+                        -- the home furnished,  so that we can still
+                        -- count the furnishings without double-counting.
+  MARAS_KISS                    = { id =  1, cost = Cost:New({gold =       0, crowns =   nil }) }
+, ROSY_LION                     = { id =  2, cost = Cost:New({gold =       0, crowns =   nil }) }
+, EBONY_FLASK                   = { id =  3, cost = Cost:New({gold =       0, crowns =   nil }) }
+, SAINT_DELYN_PENTHOUSE         = { id = 42, cost = Cost:New({gold =       0, crowns =   nil }) }
+, KRAGENHOME                    = { id = 19, cost = Cost:New({gold =   69000, crowns =   nil }) }
+, AUTUMNS_GATE                  = { id = 28, cost = Cost:New({gold =   60000, crowns =   nil }) }
+, GRYMHEARTHS_WOE               = { id = 29, cost = Cost:New({gold =  280000, crowns =   nil }) }
+, MATHIISEN_MANOR               = { id =  9, cost = Cost:New({gold = 1025000, crowns =   nil }) }
+, OLD_MISTVEIL_MANOR            = { id = 30, cost = Cost:New({gold = 1020000, crowns =   nil }) }
+, LINCHAL_MANOR                 = { id = 46, cost = Cost:New({gold =     nil, crowns = 14000 }) }
+, COLDHARBOUR_SURREAL_ESTATE    = { id = 47, cost = Cost:New({gold = 1000000, crowns =   nil }) }
+, ERSTWHILE_SANCTUARY           = { id = 56, cost = Cost:New({gold =     nil, crowns = 13000 }) }
+}
 
 -- Fetch Inventory Data from the server ------------------------------------------
 
@@ -184,22 +270,39 @@ function ZZHousingInventory:ScanNow()
         return
     end
 
-    local location_name  = GetPlayerLocationName()
-    local save_furniture = {}
+                        -- Find the HOUSE constant from above for this
+                        -- current house.
+    local house = nil
+    for _,v in pairs(HOUSE) do
+        if v.id == house_id then
+            house = v
+        end
+    end
+
+    local location_name   = GetPlayerLocationName()
+    local save_furniture  = {}
+    local total_furn_cost = Cost:New()
 
     local furniture_id = GetNextPlacedHousingFurnitureId(nil)
-    local loop_limit   = 1000 -- avoid infinite loops in cause GNPHFI() surprises us
+    local loop_limit   = 1000 -- avoid infinite loops in case GNPHFI() surprises us
     while furniture_id and 0 < loop_limit do
         local item = Item:FromFurnitureId(furniture_id)
         local key, store = item:ToStorage()
         save_furniture[key]    = save_furniture[key] or store
         save_furniture[key].ct = save_furniture[key].ct + 1
-
+        total_furn_cost:Add(item:Cost())
         furniture_id = GetNextPlacedHousingFurnitureId(furniture_id)
         loop_limit = loop_limit - 1
     end
 
-    self.savedVariables.house[location_name] = save_furniture
+    self.savedVariables.house[location_name] = { furniture = save_furniture
+                                               , house     = house
+                                               , furn_cost = total_furn_cost
+                                               }
+    d("House: "..location_name)
+    d("House purchase:"..house.cost:ToStorage())
+    d("Furnishings ct:"..tostring(#save_furniture)
+        .." cost:"..total_furn_cost:ToStorage())
 end
 
 function ZZHousingInventory.MMPrice(link)
@@ -278,7 +381,7 @@ local function from_FurC_AchievementVendor(item_link, recipe_array)
     return nil, nil, nil
 end
 
-local function from_FurC_Generic(item_link, recipe_array, curr_type)
+local function from_FurC_Generic(item_link, recipe_array, currency_type)
     local item_id      = FurC.GetItemId(item_link)
     local version_data = FurC.MiscItemSources[recipe_array.version]
     if not version_data then return nil, nil, nil end
@@ -286,17 +389,17 @@ local function from_FurC_Generic(item_link, recipe_array, curr_type)
     if not origin_data then return nil, nil, nil end
     local entry = origin_data[item_id]
     if type(entry) == "number" then
-        return curr_type, entry, nil
+        return currency_type, entry, nil
     end
     if type(entry) == "string" then
         local n = string.match(entry, "%d+")
         if n and tonumber(n) then
-            return curr_type, tonumber(n), nil
+            return currency_type, tonumber(n), nil
         end
     end
     if type(entry) == "table" then
         if entry.itemPrice then
-            return curr_type, entry.itemPrice, nil
+            return currency_type, entry.itemPrice, nil
         end
     end
     return nil, nil, nil
@@ -316,7 +419,7 @@ local function from_FurC_NoPrice(item_link, recipe_array)
     return nil, nil, nil
 end
 
-local function from_FurC_PVP(item_link, recipe_array, curr_type)
+local function from_FurC_PVP(item_link, recipe_array, currency_type)
     local item_id      = FurC.GetItemId(item_link)
     local version_data = FurC.PVP[recipe_array.version]
     if not version_data then return nil, nil, nil end
@@ -365,14 +468,16 @@ function ZZHousingInventory.FurCPrice(item_link)
             = func(item_link, recipe_array)
     end
 
-    local o = { origin    = origin
-              , desc      = desc
-              , curr_type = currency_type
-              , curr_ct   = currency_ct
-              , notes     = currency_notes
+    local o = { origin        = origin
+              , desc          = desc
+              , currency_type = currency_type
+              , currency_ct   = currency_ct
+              , notes         = currency_notes
               }
     return o
 end
+
+
 
 
 -- Postamble -----------------------------------------------------------------

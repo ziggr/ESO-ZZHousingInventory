@@ -8,6 +8,8 @@ ZZHousingInventory.default = {
     house = {}
 }
 
+-- GetCurrentZoneHouseId() constants that I cannot find defined yet
+local COLOSSAL_ALDMERI_GROTTO = COLOSSAL_ALDMERI_GROTTO or 60
 
 -- cost ----------------------------------------------------------------------
 -- A cost in gold, crowns, or vouchers
@@ -33,6 +35,13 @@ function Cost:Add(b)
         if b.crowns   then self.crowns   = (self.crowns   or 0) + b.crowns   end
         if b.vouchers then self.vouchers = (self.vouchers or 0) + b.vouchers end
     end
+    return self
+end
+
+function Cost:MultiplyBy(n)
+    self.gold     = (self.gold     or 0) * n
+    self.crowns   = (self.crowns   or 0) * n
+    self.vouchers = (self.vouchers or 0) * n
     return self
 end
 
@@ -89,6 +98,26 @@ function Item:FromFurnitureId(furniture_id, count_collectibles)
     return o
 end
 
+function Item:FromBag(bag_id, slot_id)
+    local item_name = GetItemName(bag_id, slot_id)
+    if not (item_name and item_name ~= "") then return nil end
+
+    local o = {}
+    o.item_name         = item_name
+    o.link         = GetItemLink(bag_id, slot_id)
+    local _,ct          = GetItemInfo(bag_id, slot_id)
+    o.ct                = ct
+
+    Item.Unattune(o)
+    o.mm                = ZZHousingInventory.MMPrice(o.link)
+    o.furc              = ZZHousingInventory.FurCPrice(o.link)
+    Item.SupplyZigCost(o, count_collectibles)
+
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
 function Item.Unattune(item)
     if not item and item.name then return end
 
@@ -116,29 +145,39 @@ function Item.Unattune(item)
         item.item_name = "Attunable Woodworking Station"
         item.link     = "|H1:item:119822:364:50:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:10000:0|h|h"
         item.furniture_data_id = 4052
+    elseif string.find(item.item_name, "Jewelry Crafting Station ") then
+        d("Un-attuning: "..item.item_name)
+        item.item_name = "Attunable Jewelry Crafting Station"
+        item.link      = "|H1:item:137947:124:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0|h|h"
+        item.furniture_data_id = 4051
     end
 end
 
 Item.ZIG_COST = {
-  ["The Apprentice"                         ] = Cost:New({ crowns = 250 })
-, ["The Atronach"                           ] = Cost:New({ crowns = 250 })
-, ["The Tower"                              ] = Cost:New({ crowns = 250 })
-, ["The Thief"                              ] = Cost:New({ crowns = 250 })
-, ["The Serpent"                            ] = Cost:New({ crowns = 250 })
-, ["The Ritual"                             ] = Cost:New({ crowns = 250 })
-, ["The Mage"                               ] = Cost:New({ crowns = 250 })
-, ["The Lady"                               ] = Cost:New({ crowns = 250 })
-, ["The Lord"                               ] = Cost:New({ crowns = 250 })
-, ["The Warrior"                            ] = Cost:New({ crowns = 250 })
-, ["The Lover"                              ] = Cost:New({ crowns = 250 })
-, ["The Steed"                              ] = Cost:New({ crowns = 250 })
-, ["The Shadow"                             ] = Cost:New({ crowns = 250 })
+  ["The Apprentice"                         ] = Cost:New({ crowns   = 4000 })
+, ["The Atronach"                           ] = Cost:New({ crowns   = 4000 })
+, ["The Tower"                              ] = Cost:New({ crowns   = 4000 })
+, ["The Thief"                              ] = Cost:New({ crowns   = 4000 })
+, ["The Serpent"                            ] = Cost:New({ crowns   = 4000 })
+, ["The Ritual"                             ] = Cost:New({ crowns   = 4000 })
+, ["The Mage"                               ] = Cost:New({ crowns   = 4000 })
+, ["The Lady"                               ] = Cost:New({ crowns   = 4000 })
+, ["The Lord"                               ] = Cost:New({ crowns   = 4000 })
+, ["The Warrior"                            ] = Cost:New({ crowns   = 4000 })
+, ["The Lover"                              ] = Cost:New({ crowns   = 4000 })
+, ["The Steed"                              ] = Cost:New({ crowns   = 4000 })
+, ["The Shadow"                             ] = Cost:New({ crowns   = 4000 })
 
-, ["Transmute Station"                      ] = Cost:New({ crowns = 1250 })
-, ["Statue of Azura, Queen of Dawn and Dusk"] = Cost:New({ crowns = 4000 })
-, ["Hedge, Dense High Wall"                 ] = Cost:New({ crowns =   45 })
-, ["Topiary, Strong Cypress"                ] = Cost:New({ crowns =   45 })
-, ["Seal of Molag Bal"                      ] = Cost:New({ crowns = 5000 })
+, ["Attunable Blacksmithing Station"        ] = Cost:New({ vouchers =  250 })
+, ["Attunable Clothier Station"             ] = Cost:New({ vouchers =  250 })
+, ["Attunable Woodworking Station"          ] = Cost:New({ vouchers =  250 })
+, ["Attunable Jewelry Crafting Station"     ] = Cost:New({ vouchers =  250 })
+
+, ["Transmute Station"                      ] = Cost:New({ vouchers = 1250 })
+, ["Statue of Azura, Queen of Dawn and Dusk"] = Cost:New({ crowns   = 4000 })
+, ["Hedge, Dense High Wall"                 ] = Cost:New({ crowns   =   45 })
+, ["Topiary, Strong Cypress"                ] = Cost:New({ crowns   =   45 })
+, ["Seal of Molag Bal"                      ] = Cost:New({ crowns   = 5000 })
 }
 -- Things that appear in multiple houses. Count these collectibles only once,
 -- in the Grand Linchal Manor
@@ -208,6 +247,9 @@ function Item:Cost()
 -- d("self.furc:"..tostring(self.furc))
         self.cost = Cost:New({[self.furc.currency_type] = self.furc.currency_ct})
     end
+    if self.ct and self.cost then
+        self.cost:MultiplyBy(self.ct)
+    end
     return self.cost
 end
 
@@ -220,13 +262,16 @@ end
 function Item.ToStorage(self)
     local key   = self.furniture_data_id -- link_to_item_id(self.link)
     if not key then
+        key = link_to_item_id(self.link)
+    end
+    if not key then
         d("no key?")
         for k,v in pairs(self) do
             d("k:"..tostring(k).." v:"..tostring(v))
         end
     end
     local store = { name       = self.item_name
-                  , ct         = 0
+                  , ct         = 0  -- Surprise! Yes, zero. We add true count to this later.
                   , link       = self.link
                   , value_mm   = ZZHousingInventory.Round(self.mm)
                   , value_furc = self.furc
@@ -333,14 +378,16 @@ function ZZHousingInventory:UpdateDisplay()
     local house_list            = {}
     for house_name, house in pairs(self.savedVariables.house) do
         local c = Cost:New()
-        c:Add(house.house.cost)
-        c:Add(house.furn_cost)
-        total:Add(c)
-        local house_row = { house_name   = house_name
-                          , furniture_ct = #house.furniture
-                          , cost         = c
-                          }
-        table.insert(house_list, house_row)
+        if c and house then
+            c:Add(house.house.cost)
+            c:Add(house.furn_cost)
+            total:Add(c)
+            local house_row = { house_name   = house_name
+                              , furniture_ct = #house.furniture
+                              , cost         = c
+                              }
+            table.insert(house_list, house_row)
+        end
     end
 
     local house_name_list = {}
@@ -380,6 +427,7 @@ local HOUSE = {
 , LINCHAL_MANOR                 = { id = 46, cost = Cost:New({gold =     nil, crowns = 14000 }) }
 , COLDHARBOUR_SURREAL_ESTATE    = { id = 47, cost = Cost:New({gold = 1000000, crowns =   nil }) }
 , ERSTWHILE_SANCTUARY           = { id = 56, cost = Cost:New({gold =     nil, crowns = 13000 }) }
+, COLOSSAL_ALDMERI_GROTTO       = { id = 60, cost = Cost:New({gold =     nil, crowns = 15000 }) }
 }
 
 -- Fetch Inventory Data from the server ------------------------------------------
@@ -391,6 +439,7 @@ function ZZHousingInventory:ScanNow()
         return
     end
     local is_linchal = house_id == HOUSE.LINCHAL_MANOR.id
+    local is_mist    = house_id == HOUSE.OLD_MISTVEIL_MANOR.id
 
                         -- Find the HOUSE constant from above for this
                         -- current house.
@@ -415,6 +464,33 @@ function ZZHousingInventory:ScanNow()
         total_furn_cost:Add(item:Cost())
         furniture_id = GetNextPlacedHousingFurnitureId(furniture_id)
         loop_limit = loop_limit - 1
+    end
+
+                        -- Scan housing storage, too
+    if is_mist then
+        local empty_bank_seen_ct = 0
+        for bag_id = BAG_HOUSE_BANK_ONE,BAG_HOUSE_BANK_TEN do
+            local bag_item_ct = 0
+            local slot_ct = GetBagSize(bag_id)
+            for slot_id =1, slot_ct do
+                local item = Item:FromBag(bag_id, slot_id)
+                if item then
+                    bag_item_ct = bag_item_ct + 1
+                    local key, store = item:ToStorage()
+                    save_furniture[key]    = save_furniture[key] or store
+                    save_furniture[key].ct = save_furniture[key].ct + (item.ct or 1)
+                    total_furn_cost:Add(item:Cost())
+                end
+            end
+            if bag_item_ct == 0 then
+                empty_bank_seen_ct = empty_bank_seen_ct + 1
+            end
+        end
+        if 0 < empty_bank_seen_ct then
+            d("Counted no items from "..tostring(empty_bank_seen_ct)
+                .." housing storage containers."
+                .."Perhaps you need to open them first?")
+        end
     end
 
     self.savedVariables.house[location_name] = { furniture = save_furniture
@@ -464,7 +540,7 @@ local function from_FurC_Crafting(item_link, recipe_array)
     return kCurrType_Gold, total_mat_cost, notes
 end
 
-local function from_FurC_Rollis(item_link, recipe_array)
+local function from_FurC_Rolis(item_link, recipe_array)
     local item_id       = FurC.GetItemId(item_link)
     local seller_list   = { FurC.Rollis, FurC.Faustina }
     local seller_names  = { "Rollis", "Faustina" }
@@ -576,7 +652,7 @@ function ZZHousingInventory.FurCPrice(item_link)
                        , [FURC_PVP          ] = from_FurC_PVP                --  7
                        , [FURC_CROWN        ] = from_FurC_Crown              --  8
                        , [FURC_LUXURY       ] = from_FurC_Luxury             -- 10
-                       , [FURC_ROLLIS       ] = from_FurC_Rollis             -- 12
+                       , [FURC_ROLIS        ] = from_FurC_Rolis              -- 12
                        , [FURC_DROP         ] = from_FurC_Misc               -- 14
                        , [FURC_JUSTICE      ] = from_FurC_Misc               -- 15
 

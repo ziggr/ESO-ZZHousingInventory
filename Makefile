@@ -8,7 +8,6 @@ put:
 		--exclude=doc \
 		--exclude=data \
 		--exclude=test \
-		--exclude=Libs/LibPrice/.git \
 		. /Volumes/Elder\ Scrolls\ Online/live/AddOns/ZZHousingInventory
 
 get:

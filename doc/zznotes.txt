@@ -38,6 +38,57 @@ YES do fill in multiple fields for gold, crowns, vouchers when items
 are purchasable that way.
 
 
+# 2018 todo
+
+## House Purchase Row
+- Need house purchase row, for the name if nothing else. Make that row #1 !
+## FurC parse failures
+- Why is LibPrice.FurC not parsing out prices for some items?
+
+## Collectibles
+- How to detect Tythis and other collectibles? We have their link, could convert that to a collectible ID trivially. Lookup table of known crown costs?
+- I want a collectible_id column. Extract here so that later code doesn't have to think.
+
+```
+GetFurnitureIdFromCollectibleId(number collectibleId)
+Returns: id64 furnitureId
+```
+
+## Containers
+- Have not yet tested diving into containers
+
+## Craftable Furniture
+Going to have to do something about craftable furnishings.
+Probably parse out the ingredient list from furc_desc, and sum it up
+
+```
+"15x |H0:item:33254:30:1:0:0:0:0:0:0:0:0:0:0:0:0:34:0:0:0:0:0|h|h,
+ 8x |H0:item:114892:30:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0|h|h,
+ 11x |H0:item:114893:30:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0|h|h,
+  7x |H0:item:114894:30:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0|h|h"
+```
+could convert to:
+```
+value_furc_mat_list = {
+	{ item_ct = 12, item_id = 33254 }
+,   { item_ct =  8, item_id = 114892 }
+,   { item_ct = 11, item_id = 114893 }
+,   { item_ct =  7, item_id = 114894 }
+}
+```
+Then we could accumulate material item_id in a separate table and output it with LibPrice data just like any other rows
+```
+["materials"] = { rows just as above, but for mats }
+```
+Now it's up to later code to sum up all the item_ct by matching item_id, then choose a price lookup.
+
+## Not a lot of MM/ATT data
+
+Probably because I'm no longer in three trading guilds.
+Oh well. I'm not re-joining just to get new data.
+
+
+
 
 2017 schema
 	item_id

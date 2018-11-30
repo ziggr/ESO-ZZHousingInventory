@@ -1,8 +1,8 @@
-
-2018 Data
+# 2018 Rewrite
 
 Flat rows, no tree.
 
+```
 fields
 	container	house_id
 				coffer_id
@@ -28,7 +28,7 @@ fields
 		crowns
 		vouchers
 		desc
-
+```
 
 And a special row that we put into houses:
 	"item_name" = "house itself"
@@ -88,24 +88,8 @@ Probably because I'm no longer in three trading guilds.
 Oh well. I'm not re-joining just to get new data.
 
 
+# Relevant API
 
-
-2017 schema
-	item_id
-	ct
-	item_link
-	item_name
-	value_mm
-	value
-		desc
-		currency_ct
-		currency_type
-		notes
-		origin
-
-==============================
-old 2017 stuff
---
 GetCurrentZoneHouseId()
 Returns: number houseId
 
@@ -125,8 +109,7 @@ Returns: number ItemQuality quality
 GetPlacedFurnitureLink(id64 placedFurnitureId, number LinkStyle linkStyle)
 Returns: string itemLink, string collectibleLink
 
---
-furnitureId:
+-- furnitureId:
 GetFurnitureIdFromCollectibleId(number collectibleId)
 Returns: id64 furnitureId
 
@@ -155,17 +138,18 @@ Returns: number:nilable categoryId, number:nilable subcategoryId, number Furnitu
 GetFurnitureDataCategoryInfo(number furnitureDataId)
 Returns: number:nilable categoryId, number:nilable subcategoryId
 
---
-Furniture Catalogue
+# Furniture Catalogue
 
+```lua
 	itemId 		= FurC.GetItemId(itemLink)
 	recipeArray = FurC.Find(itemLink)
 	sourceString = FurC.GetItemDescription(itemId, recipeArray)
-
-	sourceString is "Sold by Rohzika (Rivenspire, Shornhelm, Dead Wolf Inn, 250)"
+```
+sourceString is "Sold by Rohzika (Rivenspire, Shornhelm, Dead Wolf Inn, 250)"
 
 But need to dig deeper if I want to fetch that "250" as an integer gold amount
 
+```lua
 function FurC.GetItemDescription(recipeKey, recipeArray, stripColor)
 	recipeArray = recipeArray or FurC.Find(recipeKey, recipeArray)
 	if not recipeArray then return "" end
@@ -191,7 +175,7 @@ function FurC.GetItemDescription(recipeKey, recipeArray, stripColor)
 	end
 	return itemSource or GetString(SI_FURC_ITEMSOURCE_EMPTY)
 end
-
+```
 For the most part, the look seems to be
 	specific data table
 		[recipeKey] = integer cost (in gold, vouchers, whatever)

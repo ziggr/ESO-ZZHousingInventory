@@ -1,15 +1,46 @@
-local LAM2 = LibStub("LibAddonMenu-2.0")
-
 local ZZHousingInventory = {}
 ZZHousingInventory.name            = "ZZHousingInventory"
-ZZHousingInventory.version         = "3.3.1"
-ZZHousingInventory.savedVarVersion = 1
+ZZHousingInventory.savedVarVersion = 2
 ZZHousingInventory.default = {
-    house = {}
+    row = {}
 }
+
+SLASH_COMMANDS["/house"] = function() ZZHousingInventory.SlashCommand() end
 
 -- GetCurrentZoneHouseId() constants that I cannot find defined yet
 local COLOSSAL_ALDMERI_GROTTO = COLOSSAL_ALDMERI_GROTTO or 60
+
+-- New 2018 schema -----------------------------------------------------------
+
+-- Row -----------------------------------------------------------------------
+--
+-- A stack of one or more idendical items within a single container.
+--
+-- Yes, fill in multiple fields whenever available. List ALL the prices from
+-- ALL the sources. If an item is purchaseable by gold or vouchers, list BOTH.
+-- Retain as much data as possible. You can filter it down later.
+--
+local Row = {}
+function Row:New(args)
+    local o = { container           = nil
+              , item_id             = nil
+              , item_name           = nil
+              , item_link           = nil
+              , item_ct             = nil
+              , furniture_id        = nil
+              , furniture_data_id   = nil
+              , value_mm_gold       = nil
+              , value_att_gold      = nil
+              , value_ttc_gold      = nil
+              , value_furc_gold     = nil
+              , value_furc_crowns   = nil
+              , value_furc_vouchers = nil
+              , value_furc_desc     = nil
+              }
+end
+
+
+-- old 2017 schema -----------------------------------------------------------
 
 -- cost ----------------------------------------------------------------------
 -- A cost in gold, crowns, or vouchers

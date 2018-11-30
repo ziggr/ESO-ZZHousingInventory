@@ -1,4 +1,59 @@
 
+2018 Data
+
+Flat rows, no tree.
+
+fields
+	container	house_id
+				coffer_id
+				"collectibles" to hold
+					the actual coffers themselves,
+					banker,
+					merchant
+	item_id
+	item_name
+	item_link
+	furniture_id
+	furniture_data_id
+	item_ct 	for this container only
+
+	value_mm
+		gold 	mm.avgPrice
+	value_att
+		gold 	att.avgPrice
+	value_ttc
+		gold 	ttc.Avg
+	value_furc
+		gold
+		crowns
+		vouchers
+		desc
+
+
+And a special row that we put into houses:
+	"item_name" = "house itself"
+	and set the purchase value accordingly in value_furc sub-fields
+
+YES do fill in multiple fields for gold, crowns, vouchers when items
+are purchasable that way.
+
+
+
+2017 schema
+	item_id
+	ct
+	item_link
+	item_name
+	value_mm
+	value
+		desc
+		currency_ct
+		currency_type
+		notes
+		origin
+
+==============================
+old 2017 stuff
 --
 GetCurrentZoneHouseId()
 Returns: number houseId

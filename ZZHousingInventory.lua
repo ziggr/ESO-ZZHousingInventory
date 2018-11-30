@@ -187,6 +187,13 @@ local HOUSE = {
 , COLOSSAL_ALDMERI_GROTTO       = { id = 60, cost = {gold =     nil, crowns = 15000 } }
 }
 
+-- "|H0:collectible:267:|h|h"
+local COLLECTIBLE = {
+  { collectible_id =  267, name = "Tythis Andromo, the Banker", crowns = 5000 }
+, { collectible_id =  301, name = "Nuzhimeh the Merchant"     , crowns = 5000 }
+, { collectible_id = 5083, name = "Prong-Eared Grimalkin"     , crowns = 1000 }
+
+}
 -- Fetch Inventory Data from the server ------------------------------------------
 
                         -- Iterator/generator for all placed furnishings.

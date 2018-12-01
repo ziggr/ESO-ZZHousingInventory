@@ -40,22 +40,22 @@ are purchasable that way.
 
 # 2018 todo
 
-## House Purchase Row
-- Need house purchase row, for the name if nothing else. Make that row #1 !
 ## FurC parse failures
-- Why is LibPrice.FurC not parsing out prices for some items?
+- [x] Why is LibPrice.FurC not parsing out prices for some items?
+	- [x] Rolis name typo
+	- [x] achievement vendor logic failure
+	- [x] [Craftable Furniture](#Craftable%20Furniture) below
+
+## House Purchase Row
+- [x] Need house purchase row, for the name if nothing else. Make that row #1 !
+
 
 ## Collectibles
-- How to detect Tythis and other collectibles? We have their link, could convert that to a collectible ID trivially. Lookup table of known crown costs?
-- I want a collectible_id column. Extract here so that later code doesn't have to think.
-
-```
-GetFurnitureIdFromCollectibleId(number collectibleId)
-Returns: id64 furnitureId
-```
+- [x] How to detect Tythis and other collectibles? We have their link, could convert that to a collectible ID trivially. Lookup table of known crown costs?
+- [x] I want a collectible_id column. Extract here so that later code doesn't have to think.
 
 ## Containers
-- Have not yet tested diving into containers
+- [x] Have not yet tested diving into containers
 
 ## Craftable Furniture
 Going to have to do something about craftable furnishings.
@@ -84,7 +84,7 @@ Now it's up to later code to sum up all the item_ct by matching item_id, then ch
 
 ## Not a lot of MM/ATT data
 
-Probably because I'm no longer in three trading guilds.
+Probably because I'm no longer in three top-tier trading guilds.
 Oh well. I'm not re-joining just to get new data.
 
 

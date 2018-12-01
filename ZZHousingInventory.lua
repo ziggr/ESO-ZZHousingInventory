@@ -200,7 +200,7 @@ function ZZHousingInventory.HouseKey()
         Error("not in a house. Exiting.")
         return nil
     end
-    return string.format("House %d", house_id)
+    return string.format("house %d", house_id)
 end
 
 function ZZHousingInventory.BagKey(bag_id)

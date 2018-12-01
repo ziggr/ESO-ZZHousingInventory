@@ -146,6 +146,12 @@ function Row:AddPriceData()
     if price.att then
         self.value_att_gold  = price.att.avgPrice
     end
+    if price.rolis then
+        self.value_rolis_vouchers = price.rolis.vouchers
+    end
+    if price.crown then
+        self.value_crowns = price.crown.crowns
+    end
     if price.furc then
         if not Row.FURC_TO_FIELD then
             Row.FURC_TO_FIELD = {

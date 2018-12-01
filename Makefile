@@ -1,4 +1,4 @@
-.PHONY: send get csv
+.PHONY: put get prieless
 
 put:
 	cp -f ./ZZHousingInventory.lua /Volumes/Elder\ Scrolls\ Online/live/AddOns/ZZHousingInventory/
@@ -13,3 +13,5 @@ put:
 get:
 	cp -f /Volumes/Elder\ Scrolls\ Online/live/SavedVariables/ZZHousingInventory.lua data/
 
+priceless:
+	lua find_priceless.lua | sort > find_priceless.out

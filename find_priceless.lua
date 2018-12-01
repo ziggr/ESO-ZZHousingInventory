@@ -9,8 +9,11 @@ FIELD_LIST = {
 ,   "value_att_gold"
 ,   "value_ttc_gold"
 ,   "value_furc_gold"
+,   "value_furc_crowns"
 ,   "value_coll_gold"
 ,   "value_coll_crowns"
+,   "value_rolis_vouchers"
+,   "value_crowns"
 }
 function check(container_key, index, furn)
     if furn.item_id then

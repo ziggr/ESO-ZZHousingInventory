@@ -160,6 +160,22 @@ function Row:AddPriceData()
             self[field_name] = price.furc.currency_ct
         end
         self.value_furc_desc = price.furc.desc
+        if price.furc.ingredient_list then
+            self.value_furc_ingr = {}
+            local template = "%1.1f = %dx%1.1f %s from %s.%s"
+            for _,v in ipairs(price.furc.ingredient_list) do
+                local total = 0
+                if v.ingr_gold_ea then total = v.ingr_gold_ea * v.ingr_ct end
+                local s = template:format( total
+                                         , v.ingr_ct or 0
+                                         , v.ingr_gold_ea or 0
+                                         , v.ingr_name
+                                         , v.ingr_gold_source_key
+                                         , v.ingr_gold_field_name
+                                         )
+                table.insert(self.value_furc_ingr, s)
+            end
+        end
     end
 end
 
@@ -278,7 +294,7 @@ function ZZHousingInventory.ScanNow()
                         -- house. No point in repeating this loop in other
                         -- houses to get the exact same data.
     local is_primary = IsPrimaryHouse(house_id)
-is_primary = true -- TEMP HACK so that I can test containers in Old Mistveil Manor instead of The Craftorium
+-- is_primary = true -- TEMP HACK so that I can test containers in Old Mistveil Manor instead of The Craftorium
     if is_primary then
         local empty_bank_seen_ct = 0
         for bag_id = BAG_HOUSE_BANK_ONE,BAG_HOUSE_BANK_TEN do

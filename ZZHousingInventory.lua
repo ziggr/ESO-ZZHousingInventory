@@ -206,12 +206,12 @@ function ZZHousingInventory.HouseKey()
         Error("not in a house. Exiting.")
         return nil
     end
-    return string.format("house %d", house_id)
+    return string.format("House %02d", house_id)
 end
 
 function ZZHousingInventory.BagKey(bag_id)
     if not bag_id then return nil end
-    return string.format("bag %d", bag_id)
+    return string.format("Bag %02d", bag_id)
 end
 
 -- copied from Dolgubon's LibLazyCrafting functions.lua.

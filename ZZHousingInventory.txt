@@ -5,3 +5,4 @@
 ## SavedVariables: ZZHousingInventoryVars
 
 ZZHousingInventory.lua
+ZZHousingInventory_Collectibles.lua

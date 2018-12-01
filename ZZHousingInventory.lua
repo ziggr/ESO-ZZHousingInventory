@@ -1,4 +1,4 @@
-local ZZHousingInventory = {}
+ZZHousingInventory = ZZHousingInventory or {}
 ZZHousingInventory.name            = "ZZHousingInventory"
 ZZHousingInventory.savedVarVersion = 1
 ZZHousingInventory.default = {
@@ -46,6 +46,8 @@ function Row:New()
               , value_furc_vouchers = nil
               , value_furc_ap       = nil
               , value_furc_desc     = nil
+              , value_coll_gold     = nil
+              , value_coll_crowns   = nil
               }
     setmetatable(o, self)
     self.__index = self
@@ -85,11 +87,11 @@ function Row:CreateHouseRow(house_id)
     row.container        = ZZHousingInventory.HouseKey(house_id)
     row.house_id         = house_id
 
-    local house_data = ZZHousingInventory.HOUSE[house_id]
-    if house_data then
-        row.value_house_gold   = house_data.gold
-        row.value_house_crowns = house_data.crowns
-    end
+    -- local house_data = ZZHousingInventory.HOUSE[house_id]
+    -- if house_data then
+    --     row.value_house_gold   = house_data.gold
+    --     row.value_house_crowns = house_data.crowns
+    -- end
 
     row:AddCollectibleData(coll_id)
     return row
@@ -120,8 +122,18 @@ function Row:AddCollectibleData(collectible_id)
     self.collectible_name = coll_data:GetFormattedName()
     self.collectible_desc = coll_info[2]
 
+                        -- If this is a collectible housing storage container,
+                        -- record its own bag_key, just to help Zig navigate
+                        -- SavedVariables.
     local bag_id = GetCollectibleBankAccessBag(collectible_id)
     self.collectible_bag_key = ZZHousingInventory.BagKey(bag_id)
+
+                        -- Record cost, if any.
+    local c = ZZHousingInventory.CollectibleData(collectible_id)
+    if c then
+        self.value_coll_gold   = c.gold
+        self.value_coll_crowns = c.crowns
+    end
 end
 
 function Row:AddPriceData()
@@ -202,88 +214,16 @@ function ZZHousingInventory.CollectibleIDToCollectibleLink(collectible_id)
     return string.format(template, collectible_id)
 end
 
+function ZZHousingInventory.CollectibleData(collectible_id)
+    for _,c in ipairs(ZZHousingInventory.COLLECTIBLES) do
+        if c.collectible_id == collectible_id then
+            return c
+        end
+    end
+    return nil
+end
 
--- HouseID -------------------------------------------------------------------
 
-                        -- all prices are for UNFURNISHED, even if we bought
-                        -- the home furnished,  so that we can still
-                        -- count the furnishings without double-counting.
-                        --
-                        -- table index === house_id for O(1) lookup.
-ZZHousingInventory.HOUSE = {
-  [ 1] = { house_id =  1, gold =    3000, crowns =   nil } -- Mara's Kiss Public House
-, [ 2] = { house_id =  2, gold =       0, crowns =   nil } -- The Rosy Lion
-, [ 3] = { house_id =  3, gold =    3000, crowns =   nil } -- Ebony Flask Inn Room
-, [ 4] = { house_id =  4, gold =   11000, crowns =   600 } -- Barbed Hook Private Room
-, [ 5] = { house_id =  5, gold =   12000, crowns =   640 } -- Sisters of the Sands Apartment
-, [ 6] = { house_id =  6, gold =   13000, crowns =   660 } -- Flaming Nix Deluxe Garret
-, [ 7] = { house_id =  7, gold =   54000, crowns =  2250 } -- Black Vine Villa
-, [ 8] = { house_id =  8, gold =  255000, crowns =  3600 } -- Cliffshade
-, [ 9] = { house_id =  9, gold = 1025000, crowns =  6400 } -- Mathiisen Manor
-, [10] = { house_id = 10, gold =   40000, crowns =  2600 } -- Humblemud
-, [11] = { house_id = 11, gold =  195000, crowns =  3520 } -- The Ample Domicile
-, [12] = { house_id = 12, gold =  760000, crowns =  5500 } -- Stay-Moist Mansion
-, [13] = { house_id = 13, gold =   45000, crowns =  2150 } -- Snugpod
-, [14] = { house_id = 14, gold =  190000, crowns =  3500 } -- Bouldertree Refuge
-, [15] = { house_id = 15, gold =  780000, crowns =  5600 } -- The Gorinir Estate
-, [16] = { house_id = 16, gold =   56000, crowns =  2300 } -- Captain Margaux's Place
-, [17] = { house_id = 17, gold =  260000, crowns =  3500 } -- Ravenhurst
-, [18] = { house_id = 18, gold = 1015000, crowns =  5700 } -- Gardner House
-, [19] = { house_id = 19, gold =   69000, crowns =  2500 } -- Kragenhome
-, [20] = { house_id = 20, gold =  323000, crowns =  4200 } -- Velothi Reverie
-, [21] = { house_id = 21, gold = 1265000, crowns =  6100 } -- Quondam Indorilia
-, [22] = { house_id = 22, gold =   50000, crowns =  2200 } -- Moonmirth House
-, [23] = { house_id = 23, gold =  335000, crowns =  4400 } -- Sleek Creek House
-, [24] = { house_id = 24, gold = 1275000, crowns =  6200 } -- Dawnshadow
-, [25] = { house_id = 25, gold =   71000, crowns =  2550 } -- Cyrodilic Jungle House
-, [26] = { house_id = 26, gold =  295000, crowns =  4000 } -- Domus Phrasticus
-, [27] = { house_id = 27, gold = 1280000, crowns =  6300 } -- Strident Springs Demesne
-, [28] = { house_id = 28, gold =   60000, crowns =  2350 } -- Autumn's-Gate
-, [29] = { house_id = 29, gold =  280000, crowns =  3800 } -- Grymharth's Woe
-, [30] = { house_id = 30, gold = 1020000, crowns =  5800 } -- Old Mistveil Manor
-, [31] = { house_id = 31, gold =   65000, crowns =  2400 } -- Hammerdeath Bungalow
-, [32] = { house_id = 32, gold =  325000, crowns =  4300 } -- Mournoth Keep
-, [33] = { house_id = 33, gold = 1285000, crowns =  6400 } -- Forsaken Stronghold
-, [34] = { house_id = 34, gold =   73000, crowns =  2600 } -- Twin Arches
-, [35] = { house_id = 35, gold =  320000, crowns =  4100 } -- House of the Silent Magnifico
-, [36] = { house_id = 36, gold = 1295000, crowns =  6500 } -- Hunding's Palatial Hall
-, [37] = { house_id = 37, gold = 3775000, crowns = 10000 } -- Serenity Falls Estate
-, [38] = { house_id = 38, gold = 3780000, crowns = 11000 } -- Daggerfall Overlook
-, [39] = { house_id = 39, gold = 3785000, crowns = 12000 } -- Ebonheart Chateau
-, [40] = { house_id = 40, gold =     nil, crowns = 15000 } -- Grand Topal Hideaway
-, [41] = { house_id = 41, gold =     nil, crowns = 13000 } -- Earthtear Cavern
-, [42] = { house_id = 42, gold =    3000, crowns =   nil } -- Saint Delyn Penthouse
-, [43] = { house_id = 43, gold = 1300000, crowns =  7000 } -- Amaya Lake Lodge
-, [44] = { house_id = 44, gold =  332000, crowns =  4000 } -- Ald Velothi Harbor House
-, [45] = { house_id = 45, gold =     nil, crowns =  8000 } -- Tel Galen
-, [46] = { house_id = 46, gold =     nil, crowns = 14000 } -- Linchal Grand Manor
-, [47] = { house_id = 47, gold = 1000000, crowns =  5600 } -- Coldharbour Surreal Estate
-, [48] = { house_id = 48, gold = 3800000, crowns = 12000 } -- Hakkvild's High Hall
-, [49] = { house_id = 49, gold =     nil, crowns =  3500 } -- Exorcised Coven Cottage
-, [50] = { house_id = 50, gold =     nil, crowns =   nil } -- nil
-, [51] = { house_id = 51, gold =     nil, crowns =   nil } -- nil
-, [52] = { house_id = 52, gold =     nil, crowns =   nil } -- nil
-, [53] = { house_id = 53, gold =     nil, crowns =   nil } -- nil
-, [54] = { house_id = 54, gold =     nil, crowns = 13000 } -- Pariah's Pinnacle
-, [55] = { house_id = 55, gold =     nil, crowns = 12000 } -- The Orbservatory Prior
-, [56] = { house_id = 56, gold =     nil, crowns = 13000 } -- The Erstwhile Sanctuary
-, [57] = { house_id = 57, gold =     nil, crowns = 14000 } -- Princely Dawnlight Palace
-, [58] = { house_id = 58, gold =    3000, crowns =   nil } -- Golden Gryphon Garret
-, [59] = { house_id = 59, gold = 1025000, crowns =  6000 } -- Alinor Crest Townhouse
-, [60] = { house_id = 60, gold =     nil, crowns = 15000 } -- Colossal Aldmeri Grotto
-, [61] = { house_id = 61, gold =     nil, crowns =  8000 } -- Hunter's Glade
-, [62] = { house_id = 62, gold =     nil, crowns =   nil } -- Grand Psijic Villa
-, [63] = { house_id = 63, gold =     nil, crowns =  4200 } -- Enchanted Snow Globe Home
-, [64] = { house_id = 64, gold =     nil, crowns =   nil } -- Lakemire Xanmeer Manor
-}
-
--- "|H0:collectible:267:|h|h"
-local COLLECTIBLE = {
-  { collectible_id =  267, name = "Tythis Andromo, the Banker", crowns = 5000 }
-, { collectible_id =  301, name = "Nuzhimeh the Merchant"     , crowns = 5000 }
-, { collectible_id = 5083, name = "Prong-Eared Grimalkin"     , crowns = 1000 }
-
-}
 -- Fetch Inventory Data from the server ------------------------------------------
 
                         -- Iterator/generator for all placed furnishings.
@@ -352,6 +292,30 @@ is_primary = true -- TEMP HACK so that I can test containers in Old Mistveil Man
                 .."Perhaps you need to open them first?", empty_bank_seen_ct)
         end
     end
+
+    --                     -- TEMP data mine
+    self.saved_vars.house = nil
+    -- self.saved_vars.house = self.saved_vars.house or {}
+    -- for _,h in ipairs(ZZHousingInventory.HOUSE) do
+    --     local coll_id = GetCollectibleIdForHouse(h.house_id)
+    --     self.saved_vars.house[h.house_id] = { collectible_id = coll_id }
+    -- end
+    --
+    self.saved_vars.coll = nil
+    -- self.saved_vars.coll = {}
+    -- for coll_id = 1,6000 do
+    --     local data = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(coll_id)
+    --     if data and (data:IsPlaceableFurniture() or data:IsHouse()) then
+    --         self.saved_vars.coll[coll_id] =
+    --                     { name           = data:GetFormattedName()
+    --                     , desc           = data:GetDescription()
+    --                     , is_purchasable = data:IsPurchasable()
+    --                     , is_house       = data:IsHouse()
+    --                     , is_placeable_furniture = data:IsPlaceableFurniture()
+    --                     , is_owned       = data:IsOwned()
+    --                     }
+    --     end
+    -- end
 end
 
                         -- Scan a housing storage container.

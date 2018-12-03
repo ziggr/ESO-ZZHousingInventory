@@ -10,6 +10,7 @@ FIELD_LIST = {
 ,   "value_ttc_gold"
 ,   "value_furc_gold"
 ,   "value_furc_crowns"
+,   "value_furc_vouchers"
 ,   "value_coll_gold"
 ,   "value_coll_crowns"
 ,   "value_rolis_vouchers"
